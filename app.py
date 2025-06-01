@@ -64,24 +64,28 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'iotproject'
 CORS(app)  # Enable CORS for all routes
 # Initialize Firebase Admin SDK
-cred = credentials.Certificate("esp32-fire-alarm-a8fc5-firebase-adminsdk-fbsvc-b2fe8f8a01.json")
+cred = credentials.Certificate("auto-checkout-b3ea1-firebase-adminsdk-fbsvc-cc9ec9d04b.json")
 firebase_admin.initialize_app(cred, {
-    "databaseURL": "https://esp32-fire-alarm-a8fc5-default-rtdb.asia-southeast1.firebasedatabase.app/"
+    "databaseURL": "https://auto-checkout-b3ea1-default-rtdb.asia-southeast1.firebasedatabase.app/"
 })
 # Flask-Mail configuration
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'  
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'minhluong10062006@gmail.com'  
-app.config['MAIL_PASSWORD'] = 'pclg gmfq phec uits'  # App Password from Google
-app.config['MAIL_DEFAULT_SENDER'] = 'minhluong10062006@gmail.com'
+app.config.update(
+    MAIL_SERVER='smtp.gmail.com',
+    MAIL_PORT=587,
+    MAIL_USE_TLS=True,
+    MAIL_USE_SSL=False,
+    MAIL_USERNAME='minhluong10062006@gmail.com',
+    MAIL_PASSWORD='pclg gmfq phec uits',
+    MAIL_DEFAULT_SENDER='minhluong10062006@gmail.com',
+    MAIL_MAX_EMAILS=None,
+    MAIL_SUPPRESS_SEND=False,  # Set to True to suppress sending in development
+    MAIL_ASCII_ATTACHMENTS=False
+)
 
 mail = Mail(app)
 s = URLSafeTimedSerializer(app.config['SECRET_KEY'])  # Token serializer
 
 
-app = Flask(__name__)
-app.secret_key = 'your-secret-key-here'  # Change this to a secure secret key
 
 def validate_email(email):
     """Validate email format"""
@@ -187,11 +191,93 @@ def signup():
     
     return render_template('signup.html')
 
-@app.route('/reset-password')
+@app.route('/reset_password', methods=['GET', 'POST'])
 def reset_password():
-    # Redirect to reset password page or render reset template
-    flash('Password reset functionality - implement your reset logic here!', 'info')
-    return redirect(url_for('login'))
+    if request.method == 'POST':
+        email = request.form['email']
+
+        # Validate email format
+        if not validate_email(email):
+            flash('Please enter a valid email address!', 'error')
+            return render_template('reset_password.html')
+
+        # Check if email exists in Firebase using sanitized email
+        sanitized_email = sanitize_email(email)
+        user_ref = db.reference(f'users/{sanitized_email}')
+        user_data = user_ref.get()
+
+        if not user_data:
+            flash('Email not found. Please try again.', 'error')
+            return render_template('reset_password.html')
+
+        # Generate password reset token
+        token = s.dumps(email, salt='password-reset')
+
+        # Create reset URL
+        reset_url = url_for('reset_with_token', token=token, _external=True)
+
+        # Send email
+        try:
+            msg = Message("Password Reset Request", recipients=[email])
+            msg.body = f"Click the link to reset your password: {reset_url}"
+            mail.send(msg)
+            flash('Password reset link sent to your email.', 'success')
+        except Exception as e:
+            flash(f'Error sending email: {str(e)}', 'error')
+
+        return redirect(url_for('login'))
+
+    return render_template('reset_password.html')
+
+@app.route('/reset_password/<token>', methods=['GET', 'POST'])
+def reset_with_token(token):
+    try:
+        email = s.loads(token, salt="password-reset", max_age=3600)  # Valid for 1 hour
+    except SignatureExpired:
+        flash("The token is expired! Please request a new one.", 'error')
+        return redirect(url_for('reset_password'))
+    except:
+        flash("Invalid token!", 'error')
+        return redirect(url_for('reset_password'))
+
+    # Check if user exists using sanitized email
+    sanitized_email = sanitize_email(email)
+    user_ref = db.reference(f'users/{sanitized_email}')
+    user_data = user_ref.get()
+
+    if not user_data:
+        flash("Invalid token!", 'error')
+        return redirect(url_for('reset_password'))
+
+    if request.method == 'POST':
+        new_password = request.form['password']
+        confirm_password = request.form['confirm_password']
+
+        if new_password != confirm_password:
+            flash("Passwords do not match, please try again.", 'error')
+            return render_template("reset_with_token.html", token=token)
+
+        # Validate password strength
+        is_valid, message = validate_password(new_password)
+        if not is_valid:
+            flash(message, 'error')
+            return render_template("reset_with_token.html", token=token)
+
+        # Update password in Firebase using Werkzeug's generate_password_hash
+        try:
+            hashed_password = generate_password_hash(new_password)
+            user_ref.update({
+                'password': hashed_password
+            })
+            
+            flash('Password reset successfully! You can now log in with your new password.', 'success')
+            return redirect(url_for("login"))
+            
+        except Exception as e:
+            flash(f"Error updating password: {str(e)}", 'error')
+            return render_template("reset_with_token.html", token=token)
+
+    return render_template("reset_with_token.html", token=token)
 
 @app.route('/dashboard')
 def dashboard():
