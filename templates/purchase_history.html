@@ -1,199 +1,1090 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase History - ShopEase</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-{% block title %}Purchase History - ShopEase{% endblock %}
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), 
+                        url('https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+            padding: 20px;
+        }
 
-{% block content %}
-<div class="purchase-history-container">
-    <!-- Header -->
-    <div class="purchase-history-header">
-        <div class="logo">
-            <h1>ShopEase</h1>
-            <p>Your Premium Shopping Destination</p>
+        .purchase-history-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .purchase-history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+            animation: slideIn 0.8s ease-out;
+        }
+
+        .logo h1 {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 28px;
+            margin: 0;
+        }
+
+        .logo p {
+            color: #7f8c8d;
+            margin: 5px 0 0 0;
+            font-size: 14px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .back-btn, .logout-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .back-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+        }
+
+        .logout-btn {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+
+        .back-btn:hover, .logout-btn:hover {
+            transform: translateY(-2px);
+            text-decoration: none;
+            color: white;
+        }
+
+        .back-btn:hover {
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .logout-btn:hover {
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+
+        /* Welcome Section */
+        .welcome-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            animation: slideIn 0.8s ease-out 0.1s both;
+        }
+
+        .welcome-content h2 {
+            color: #2c3e50;
+            font-size: 32px;
+            font-weight: 700;
+            margin: 0 0 10px 0;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .welcome-content p {
+            color: #7f8c8d;
+            font-size: 16px;
+            margin: 0;
+        }
+
+        .history-stats {
+            display: flex;
+            gap: 30px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* Filter Section */
+        .filter-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 30px;
+            animation: slideIn 0.8s ease-out 0.2s both;
+        }
+
+        .search-bar {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 15px 50px 15px 20px;
+            border: 2px solid #e1e8ed;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+            color: #2c3e50;
+        }
+
+        .search-bar input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #95a5a6;
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-controls select {
+            padding: 12px 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #2c3e50;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 150px;
+        }
+
+        .filter-controls select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .clear-btn {
+            padding: 12px 20px;
+            background: transparent;
+            border: 2px solid #e74c3c;
+            color: #e74c3c;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .clear-btn:hover {
+            background: #e74c3c;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        /* Day Group Styles */
+        .purchase-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .day-group {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            animation: slideIn 0.8s ease-out;
+        }
+
+        .day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 25px 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 1px solid rgba(225, 232, 237, 0.5);
+        }
+
+        .day-header:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .day-header.expanded {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .day-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .day-date {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .day-meta {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+
+        .item-count {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .day-total {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .expand-icon {
+            transition: transform 0.3s ease;
+            color: #667eea;
+        }
+
+        .day-header.expanded .expand-icon {
+            transform: rotate(180deg);
+        }
+
+        .day-products {
+            display: none;
+            flex-direction: column;
+        }
+
+        .day-products.expanded {
+            display: flex;
+        }
+
+        .product-item {
+            display: flex;
+            align-items: center;
+            padding: 20px 30px;
+            gap: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(225, 232, 237, 0.3);
+        }
+
+        .product-item:last-child {
+            border-bottom: none;
+        }
+
+        .product-item:hover {
+            background: rgba(102, 126, 234, 0.05);
+            transform: translateX(10px);
+        }
+
+        .product-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .electronics { background: linear-gradient(45deg, #3498db, #2980b9); }
+        .food { background: linear-gradient(45deg, #e67e22, #d35400); }
+        .health { background: linear-gradient(45deg, #27ae60, #2ecc71); }
+        .clothing { background: linear-gradient(45deg, #9b59b6, #8e44ad); }
+        .home { background: linear-gradient(45deg, #1abc9c, #16a085); }
+
+        .product-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .product-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .product-category {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 12px;
+            display: inline-block;
+        }
+
+        .product-status {
+            flex-shrink: 0;
+            margin-right: 20px;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-delivered { background: rgba(39, 174, 96, 0.1); color: #27ae60; }
+        .status-processing { background: rgba(241, 196, 15, 0.1); color: #f1c40f; }
+        .status-shipped { background: rgba(52, 152, 219, 0.1); color: #3498db; }
+        .status-cancelled { background: rgba(231, 76, 60, 0.1); color: #e74c3c; }
+
+        .product-amount {
+            font-size: 16px;
+            font-weight: 700;
+            color: #2c3e50;
+            flex-shrink: 0;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 25px 30px;
+            border-bottom: 1px solid #e1e8ed;
+        }
+
+        .modal-header h3 {
+            color: #2c3e50;
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #7f8c8d;
+            transition: color 0.3s ease;
+            padding: 5px;
+        }
+
+        .modal-close:hover {
+            color: #e74c3c;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .detail-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e1e8ed;
+        }
+
+        .detail-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .detail-info h4 {
+            color: #2c3e50;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .detail-info p {
+            color: #7f8c8d;
+            margin: 0;
+        }
+
+        .detail-section {
+            margin-bottom: 20px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-weight: 500;
+            color: #7f8c8d;
+        }
+
+        .detail-value {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .amount-highlight {
+            color: #667eea;
+            font-size: 20px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 60px 30px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: none;
+        }
+
+        .empty-state.show {
+            display: block;
+        }
+
+        .empty-icon {
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            color: #2c3e50;
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0 0 10px 0;
+        }
+
+        .empty-state p {
+            color: #7f8c8d;
+            font-size: 16px;
+            margin: 0 0 30px 0;
+        }
+
+        .clear-search-btn {
+            padding: 12px 25px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .clear-search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .purchase-history-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .header-actions {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .back-btn, .logout-btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .welcome-section {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+            
+            .history-stats {
+                justify-content: center;
+            }
+            
+            .filter-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .filter-controls select, .clear-btn {
+                width: 100%;
+            }
+            
+            .day-header {
+                padding: 20px;
+            }
+            
+            .day-info {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .product-item {
+                padding: 15px 20px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .product-status, .product-amount {
+                align-self: stretch;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 15px;
+            }
+            
+            .purchase-history-header,
+            .welcome-section,
+            .filter-section {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="purchase-history-container">
+        <!-- Header -->
+        <div class="purchase-history-header">
+            <div class="logo">
+                <h1>ShopEase</h1>
+                <p>Your Premium Shopping Destination</p>
+            </div>
+            <div class="header-actions">
+                <a href="#" class="back-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="m12 19-7-7 7-7"/>
+                        <path d="m19 12H5"/>
+                    </svg>
+                    Back to Dashboard
+                </a>
+                <a href="#" class="logout-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16,17 21,12 16,7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    Logout
+                </a>
+            </div>
         </div>
-        <div class="header-actions">
-            <a href="{{ url_for('dashboard') }}" class="back-btn">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="m12 19-7-7 7-7"/>
-                    <path d="m19 12H5"/>
+
+        <!-- Welcome Section -->
+        <div class="welcome-section">
+            <div class="welcome-content">
+                <h2>Purchase History</h2>
+                <p>Welcome back, John! Here's your complete purchase history grouped by date.</p>
+            </div>
+            <div class="history-stats">
+                <div class="stat-item">
+                    <div class="stat-number">15</div>
+                    <div class="stat-label">Total Orders</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">$2,847.50</div>
+                    <div class="stat-label">Total Spent</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter and Search -->
+        <div class="filter-section">
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Search purchases...">
+                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.35-4.35"/>
                 </svg>
-                Back to Dashboard
-            </a>
-            <a href="{{ url_for('logout') }}" class="logout-btn">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                    <polyline points="16,17 21,12 16,7"/>
-                    <line x1="21" y1="12" x2="9" y2="12"/>
+            </div>
+            <div class="filter-controls">
+                <select id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Processing">Processing</option>
+                    <option value="Shipped">Shipped</option>
+                    <option value="Cancelled">Cancelled</option>
+                </select>
+                <select id="categoryFilter">
+                    <option value="">All Categories</option>
+                    <option value="Electronics">Electronics</option>
+                    <option value="Food & Beverages">Food & Beverages</option>
+                    <option value="Health & Fitness">Health & Fitness</option>
+                    <option value="Clothing">Clothing</option>
+                    <option value="Home & Kitchen">Home & Kitchen</option>
+                </select>
+                <button id="clearFilters" class="clear-btn">Clear Filters</button>
+            </div>
+        </div>
+
+        <!-- Purchase History List -->
+        <div class="purchase-list" id="purchaseList">
+            <!-- Day groups will be populated by JavaScript -->
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" id="emptyState">
+            <div class="empty-icon">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.35-4.35"/>
                 </svg>
-                Logout
-            </a>
+            </div>
+            <h3>No purchases found</h3>
+            <p>Try adjusting your search or filter criteria</p>
+            <button id="clearSearchBtn" class="clear-search-btn">Clear Search</button>
         </div>
     </div>
 
-    <!-- Flash Messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="flash-messages">
-                {% for category, message in messages %}
-                    <div class="flash-message flash-{{ category }}">
-                        {{ message }}
-                        <button class="flash-close">&times;</button>
+    <!-- Purchase Detail Modal -->
+    <div class="modal-overlay" id="purchaseModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Purchase Details</h3>
+                <button class="modal-close" id="closeModal">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Purchase details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample purchase data
+        const purchaseData = [
+            { id: 1, item: "iPhone 15 Pro", category: "Electronics", date: "2024-01-15", amount: 999.99, status: "Delivered" },
+            { id: 2, item: "Organic Coffee Beans", category: "Food & Beverages", date: "2024-01-15", amount: 24.99, status: "Delivered" },
+            { id: 3, item: "Wireless Earbuds", category: "Electronics", date: "2024-01-15", amount: 149.99, status: "Delivered" },
+            { id: 4, item: "Yoga Mat", category: "Health & Fitness", date: "2024-01-14", amount: 45.00, status: "Processing" },
+            { id: 5, item: "Winter Jacket", category: "Clothing", date: "2024-01-14", amount: 189.99, status: "Shipped" },
+            { id: 6, item: "Kitchen Knife Set", category: "Home & Kitchen", date: "2024-01-13", amount: 79.99, status: "Delivered" },
+            { id: 7, item: "Protein Powder", category: "Health & Fitness", date: "2024-01-13", amount: 39.99, status: "Cancelled" },
+            { id: 8, item: "Laptop Stand", category: "Electronics", date: "2024-01-12", amount: 65.00, status: "Delivered" },
+            { id: 9, item: "Green Tea", category: "Food & Beverages", date: "2024-01-12", amount: 18.50, status: "Delivered" },
+            { id: 10, item: "Running Shoes", category: "Clothing", date: "2024-01-11", amount: 129.99, status: "Delivered" }
+        ];
+
+        let filteredData = [...purchaseData];
+        let groupedData = {};
+
+        // Get category icon
+        function getCategoryIcon(category) {
+            const icons = {
+                'Electronics': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                    <line x1="8" y1="21" x2="16" y2="21"/>
+                    <line x1="12" y1="17" x2="12" y2="21"/>
+                </svg>`,
+                'Food & Beverages': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
+                    <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+                    <line x1="6" y1="1" x2="6" y2="4"/>
+                    <line x1="10" y1="1" x2="10" y2="4"/>
+                    <line x1="14" y1="1" x2="14" y2="4"/>
+                </svg>`,
+                'Health & Fitness': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                </svg>`,
+                'Clothing': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/>
+                </svg>`,
+                'Home & Kitchen': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9,22 9,12 15,12 15,22"/>
+                </svg>`
+            };
+            return icons[category] || icons['Electronics'];
+        }
+
+        // Get category class for styling
+        function getCategoryClass(category) {
+            const classes = {
+                'Electronics': 'electronics',
+                'Food & Beverages': 'food',
+                'Health & Fitness': 'health',
+                'Clothing': 'clothing',
+                'Home & Kitchen': 'home'
+            };
+            return classes[category] || 'electronics';
+        }
+
+        // Format date for display
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            return date.toLocaleDateString('en-US', options);
+        }
+
+        // Group purchases by date
+        function groupPurchasesByDate(data) {
+            const grouped = {};
+            data.forEach(purchase => {
+                const date = purchase.date;
+                if (!grouped[date]) {
+                    grouped[date] = [];
+                }
+                grouped[date].push(purchase);
+            });
+            return grouped;
+        }
+
+        // Calculate daily total
+        function calculateDayTotal(purchases) {
+            return purchases.reduce((total, purchase) => total + purchase.amount, 0);
+        }
+
+        // Render purchase list
+        function renderPurchaseList() {
+            const purchaseList = document.getElementById('purchaseList');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (filteredData.length === 0) {
+                purchaseList.style.display = 'none';
+                emptyState.classList.add('show');
+                return;
+            }
+            
+            emptyState.classList.remove('show');
+            purchaseList.style.display = 'flex';
+            
+            groupedData = groupPurchasesByDate(filteredData);
+            const sortedDates = Object.keys(groupedData).sort((a, b) => new Date(b) - new Date(a));
+            
+            let html = '';
+            
+            sortedDates.forEach(date => {
+                const purchases = groupedData[date];
+                const dayTotal = calculateDayTotal(purchases);
+                
+                html += `
+                    <div class="day-group">
+                        <div class="day-header" onclick="toggleDay('${date}')">
+                            <div class="day-info">
+                                <div class="day-date">${formatDate(date)}</div>
+                                <div class="day-meta">
+                                    <span class="item-count">${purchases.length} item${purchases.length > 1 ? 's' : ''}</span>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 20px;">
+                                <div class="day-total">$${dayTotal.toFixed(2)}</div>
+                                <svg class="expand-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6,9 12,15 18,9"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="day-products" id="day-${date}">
+                            ${purchases.map(purchase => `
+                                <div class="product-item" onclick="showPurchaseDetails(${purchase.id})">
+                                    <div class="product-icon ${getCategoryClass(purchase.category)}">
+                                        ${getCategoryIcon(purchase.category)}
+                                    </div>
+                                    <div class="product-details">
+                                        <div class="product-name">${purchase.item}</div>
+                                        <span class="product-category">${purchase.category}</span>
+                                    </div>
+                                    <div class="product-status">
+                                        <span class="status-badge status-${purchase.status.toLowerCase()}">${purchase.status}</span>
+                                    </div>
+                                    <div class="product-amount">$${purchase.amount.toFixed(2)}</div>
+                                </div>
+                            `).join('')}
+                        </div>
                     </div>
-                {% endfor %}
-            </div>
-        {% endif %}
-    {% endwith %}
+                `;
+            });
+            
+            purchaseList.innerHTML = html;
+        }
 
-    <!-- Welcome Section -->
-    <div class="welcome-section">
-        <div class="welcome-content">
-            <h2>Purchase History</h2>
-            <p>Welcome back, {{ username }}! Here's your complete purchase history.</p>
-        </div>
-        <div class="history-stats">
-            <div class="stat-item">
-                <div class="stat-number">{{ purchases|length }}</div>
-                <div class="stat-label">Total Orders</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-number">${{ "%.2f"|format(purchases|sum(attribute='amount')) }}</div>
-                <div class="stat-label">Total Spent</div>
-            </div>
-        </div>
-    </div>
+        // Toggle day expansion
+        function toggleDay(date) {
+            const dayProducts = document.getElementById(`day-${date}`);
+            const dayHeader = dayProducts.previousElementSibling;
+            
+            if (dayProducts.classList.contains('expanded')) {
+                dayProducts.classList.remove('expanded');
+                dayHeader.classList.remove('expanded');
+            } else {
+                dayProducts.classList.add('expanded');
+                dayHeader.classList.add('expanded');
+            }
+        }
 
-    <!-- Filter and Search -->
-    <div class="filter-section">
-        <div class="search-bar">
-            <input type="text" id="searchInput" placeholder="Search purchases...">
-            <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"/>
-                <path d="m21 21-4.35-4.35"/>
-            </svg>
-        </div>
-        <div class="filter-controls">
-            <select id="statusFilter">
-                <option value="">All Status</option>
-                <option value="Delivered">Delivered</option>
-                <option value="Processing">Processing</option>
-                <option value="Shipped">Shipped</option>
-                <option value="Cancelled">Cancelled</option>
-            </select>
-            <select id="categoryFilter">
-                <option value="">All Categories</option>
-                <option value="Electronics">Electronics</option>
-                <option value="Food & Beverages">Food & Beverages</option>
-                <option value="Health & Fitness">Health & Fitness</option>
-                <option value="Clothing">Clothing</option>
-                <option value="Home & Kitchen">Home & Kitchen</option>
-            </select>
-            <button id="clearFilters" class="clear-btn">Clear Filters</button>
-        </div>
-    </div>
-
-    <!-- Purchase History List -->
-    <div class="purchase-list">
-        {% for purchase in purchases %}
-        <div class="purchase-item" data-status="{{ purchase.status }}" data-category="{{ purchase.category }}">
-            <div class="purchase-main">
-                <div class="purchase-image">
-                    <div class="item-icon">
-                        {% if purchase.category == 'Electronics' %}
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-                            <line x1="8" y1="21" x2="16" y2="21"/>
-                            <line x1="12" y1="17" x2="12" y2="21"/>
-                        </svg>
-                        {% elif purchase.category == 'Food & Beverages' %}
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
-                            <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
-                            <line x1="6" y1="1" x2="6" y2="4"/>
-                            <line x1="10" y1="1" x2="10" y2="4"/>
-                            <line x1="14" y1="1" x2="14" y2="4"/>
-                        </svg>
-                        {% elif purchase.category == 'Health & Fitness' %}
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-                        </svg>
-                        {% elif purchase.category == 'Clothing' %}
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/>
-                        </svg>
-                        {% else %}
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z"/>
-                            <path d="m3 9 2.45-4.9A2 2 0 0 1 7.24 3h9.52a2 2 0 0 1 1.8 1.1L21 9"/>
-                            <path d="M12 3v6"/>
-                        </svg>
-                        {% endif %}
+        // Show purchase details in modal
+        function showPurchaseDetails(purchaseId) {
+            const purchase = purchaseData.find(p => p.id === purchaseId);
+            if (!purchase) return;
+            
+            const modalBody = document.getElementById('modalBody');
+            const orderDate = new Date(purchase.date);
+            const deliveryDate = new Date(orderDate);
+            deliveryDate.setDate(deliveryDate.getDate() + 3);
+            
+            modalBody.innerHTML = `
+                <div class="detail-header">
+                    <div class="detail-icon ${getCategoryClass(purchase.category)}">
+                        ${getCategoryIcon(purchase.category)}
+                    </div>
+                    <div class="detail-info">
+                        <h4>${purchase.item}</h4>
+                        <p>${purchase.category}</p>
                     </div>
                 </div>
-                <div class="purchase-details">
-                    <div class="item-name">{{ purchase.item }}</div>
-                    <div class="item-meta">
-                        <span class="category">{{ purchase.category }}</span>
-                        <span class="separator">•</span>
-                        <span class="date">{{ purchase.date }}</span>
+                
+                <div class="detail-section">
+                    <div class="detail-row">
+                        <span class="detail-label">Order ID</span>
+                        <span class="detail-value">#ORD${purchase.id.toString().padStart(4, '0')}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Order Date</span>
+                        <span class="detail-value">${formatDate(purchase.date)}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Status</span>
+                        <span class="status-badge status-${purchase.status.toLowerCase()}">${purchase.status}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Expected Delivery</span>
+                        <span class="detail-value">${formatDate(deliveryDate.toISOString().split('T')[0])}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Total Amount</span>
+                        <span class="detail-value amount-highlight">$${purchase.amount.toFixed(2)}</span>
                     </div>
                 </div>
-                <div class="purchase-status">
-                    <span class="status-badge status-{{ purchase.status.lower() }}">
-                        {{ purchase.status }}
-                    </span>
-                </div>
-                <div class="purchase-amount">
-                    <div class="amount">${{ "%.2f"|format(purchase.amount) }}</div>
-                </div>
-                <div class="purchase-actions">
-                    <button class="action-btn view-btn" data-id="{{ purchase.id }}">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                            <circle cx="12" cy="12" r="3"/>
-                        </svg>
-                        View
-                    </button>
-                    <button class="action-btn more-btn" data-id="{{ purchase.id }}">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="1"/>
-                            <circle cx="12" cy="5" r="1"/>
-                            <circle cx="12" cy="19" r="1"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
+            `;
+            
+            document.getElementById('purchaseModal').classList.add('show');
+        }
 
-    <!-- Empty State -->
-    <div class="empty-state" id="emptyState" style="display: none;">
-        <div class="empty-icon">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <circle cx="11" cy="11" r="8"/>
-                <path d="m21 21-4.35-4.35"/>
-            </svg>
-        </div>
-        <h3>No purchases found</h3>
-        <p>Try adjusting your search or filter criteria</p>
-        <button id="clearSearchBtn" class="clear-search-btn">Clear Search</button>
-    </div>
-</div>
+        // Filter functions
+        function applyFilters() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            
+            filteredData = purchaseData.filter(purchase => {
+                const matchesSearch = purchase.item.toLowerCase().includes(searchTerm) ||
+                                    purchase.category.toLowerCase().includes(searchTerm);
+                const matchesStatus = !statusFilter || purchase.status === statusFilter;
+                const matchesCategory = !categoryFilter || purchase.category === categoryFilter;
+                
+                return matchesSearch && matchesStatus && matchesCategory;
+            });
+            
+            renderPurchaseList();
+        }
 
-<!-- Purchase Detail Modal -->
-<div class="modal-overlay" id="purchaseModal" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Purchase Details</h3>
-            <button class="modal-close" id="closeModal">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="18" y1="6" x2="6" y2="18"/>
-                    <line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-            </button>
-        </div>
-        <div class="modal-body" id="modalBody">
-            <!-- Purchase details will be loaded here -->
-        </div>
-    </div>
-</div>
-{% endblock %}
+        // Clear all filters
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('categoryFilter').value = '';
+            filteredData = [...purchaseData];
+            renderPurchaseList();
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            renderPurchaseList();
+            
+            // Search input
+            document.getElementById('searchInput').addEventListener('input', applyFilters);
+            
+            // Filter selects
+            document.getElementById('statusFilter').addEventListener('change', applyFilters);
+            document.getElementById('categoryFilter').addEventListener('change', applyFilters);
+            
+            // Clear filters button
+            document.getElementById('clearFilters').addEventListener('click', clearFilters);
+            
+            // Clear search button (in empty state)
+            document.getElementById('clearSearchBtn').addEventListener('click', clearFilters);
+            
+            // Modal close
+            document.getElementById('closeModal').addEventListener('click', function() {
+                document.getElementById('purchaseModal').classList.remove('show');
+            });
+            
+            // Close modal when clicking overlay
+            document.getElementById('purchaseModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('show');
+                }
+            });
+            
+            // Back button
+            document.querySelector('.back-btn').addEventListener('click', function(e) {
+                e.preventDefault();
+                alert('Navigating back to dashboard...');
+            });
+            
+            // Logout button
+            document.querySelector('.logout-btn').addEventListener('click', function(e) {
+                e.preventDefault();
+                if (confirm('Are you sure you want to logout?')) {
+                    alert('Logging out...');
+                }
+            });
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Escape key to close modal
+            if (e.key === 'Escape') {
+                document.getElementById('purchaseModal').classList.remove('show');
+            }
+            
+            // Ctrl/Cmd + F to focus search
+            if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                e.preventDefault();
+                document.getElementById('searchInput').focus();
+            }
+        });
+    </script>
+</body>
+</html>
