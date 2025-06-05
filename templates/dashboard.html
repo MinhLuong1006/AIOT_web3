@@ -153,4 +153,37 @@
         </div>
     </div>
 </div>
+
+<script>
+// Function to update balance display
+function updateBalance() {
+    fetch('/api/balance')
+        .then(response => response.json())
+        .then(data => {
+            if (data.balance !== undefined) {
+                const balanceElement = document.getElementById('balanceAmount');
+                const currentBalance = parseFloat(balanceElement.textContent);
+                const newBalance = parseFloat(data.balance);
+                
+                // Only update if balance has changed to avoid unnecessary DOM updates
+                if (currentBalance !== newBalance) {
+                    balanceElement.textContent = newBalance.toFixed(2);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching balance:', error);
+        });
+}
+
+// Update balance every 5 seconds
+setInterval(updateBalance, 5000);
+
+// Also update balance when the page becomes visible again (user switches back to tab)
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        updateBalance();
+    }
+});
+</script>
 {% endblock %}

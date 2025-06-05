@@ -314,6 +314,28 @@ def purchase_history():
                          purchases=MOCK_PURCHASE_HISTORY,
                          username=session.get('username', 'User'))
 
+
+@app.route('/api/balance')
+def get_balance():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    try:
+        user_id = session['user_id']
+        user_ref = db.reference(f'users/{user_id}')
+        user_data = user_ref.get()
+        
+        if not user_data:
+            return jsonify({'error': 'User not found'}), 404
+            
+        balance = user_data.get('balance', 0)
+        return jsonify({'balance': balance})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+
 @app.route('/logout')
 def logout():
     session.clear()
