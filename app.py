@@ -17,57 +17,18 @@ import threading
 import re
 import uuid
 from werkzeug.security import generate_password_hash, check_password_hash
-MOCK_PURCHASE_HISTORY = [
-    {
-        'id': str(uuid.uuid4()),
-        'date': '2024-05-30',
-        'item': 'Wireless Bluetooth Headphones',
-        'category': 'Electronics',
-        'amount': 89.99,
-        'status': 'Delivered'
-    },
-    {
-        'id': str(uuid.uuid4()),
-        'date': '2024-05-28',
-        'item': 'Premium Coffee Beans (2kg)',
-        'category': 'Food & Beverages',
-        'amount': 24.50,
-        'status': 'Delivered'
-    },
-    {
-        'id': str(uuid.uuid4()),
-        'date': '2024-05-25',
-        'item': 'Fitness Tracker Watch',
-        'category': 'Health & Fitness',
-        'amount': 149.99,
-        'status': 'Processing'
-    },
-    {
-        'id': str(uuid.uuid4()),
-        'date': '2024-05-22',
-        'item': 'Organic Cotton T-Shirt',
-        'category': 'Clothing',
-        'amount': 29.99,
-        'status': 'Delivered'
-    },
-    {
-        'id': str(uuid.uuid4()),
-        'date': '2024-05-20',
-        'item': 'Kitchen Knife Set',
-        'category': 'Home & Kitchen',
-        'amount': 79.95,
-        'status': 'Delivered'
-    }
-]
+
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = 'iotproject'
 CORS(app)  # Enable CORS for all routes
+
 # Initialize Firebase Admin SDK
 cred = credentials.Certificate("auto-checkout-b3ea1-firebase-adminsdk-fbsvc-cc9ec9d04b.json")
 firebase_admin.initialize_app(cred, {
     "databaseURL": "https://auto-checkout-b3ea1-default-rtdb.asia-southeast1.firebasedatabase.app/"
 })
+
 # Flask-Mail configuration
 app.config.update(
     MAIL_SERVER='smtp.gmail.com',
@@ -85,8 +46,6 @@ app.config.update(
 mail = Mail(app)
 s = URLSafeTimedSerializer(app.config['SECRET_KEY'])  # Token serializer
 
-
-
 def validate_email(email):
     """Validate email format"""
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
@@ -103,6 +62,70 @@ def validate_password(password):
     if not re.search(r'[0-9]', password):
         return False, "Password must contain at least one number"
     return True, "Password is valid"
+
+def sanitize_email(email):
+    # Replace '.' with ',' or another safe character (',' is readable and allowed)
+    return email.replace('.', ',')
+
+def get_user_purchase_history(user_id):
+    """Fetch purchase history from Firebase for a specific user"""
+    try:
+        # Get user's purchase history from Firebase
+        history_ref = db.reference(f'users/{user_id}/history')
+        history_data = history_ref.get()
+        
+        if not history_data:
+            return []
+        
+        # Convert Firebase data to list format
+        purchases = []
+        for purchase_id, purchase_data in history_data.items():
+            # Ensure all required fields exist
+            if all(key in purchase_data for key in ['amount', 'date', 'item', 'price']):
+                purchases.append({
+                    'id': purchase_id,
+                    'item': purchase_data['item'],
+                    'category': purchase_data.get('category', 'General'),  # Default category if not specified
+                    'date': purchase_data['date'],
+                    'amount': float(purchase_data.get('price', 0)),  # Total cost  # Quantity from amount field
+                    'price': float(purchase_data.get('price', 0)),  # Unit price if available
+                    'status': purchase_data.get('status', 'Delivered')  # Default status
+                })
+        
+        # Sort by date (newest first)
+        purchases.sort(key=lambda x: x['date'], reverse=True)
+        return purchases
+        
+    except Exception as e:
+        print(f"Error fetching purchase history: {e}")
+        return []
+
+def categorize_item(item_name):
+    """Automatically categorize items based on keywords in the name"""
+    item_lower = item_name.lower()
+    
+    # Electronics keywords
+    if any(keyword in item_lower for keyword in ['phone', 'laptop', 'computer', 'headphone', 'earbuds', 'tablet', 'watch', 'tv', 'camera', 'speaker', 'charger', 'cable']):
+        return 'Electronics'
+    
+    # Food & Beverages keywords
+    elif any(keyword in item_lower for keyword in ['coffee', 'tea', 'juice', 'water', 'snack', 'bread', 'milk', 'food', 'drink', 'beverage', 'beer', 'wine']):
+        return 'Food & Beverages'
+    
+    # Health & Fitness keywords
+    elif any(keyword in item_lower for keyword in ['vitamin', 'supplement', 'protein', 'fitness', 'gym', 'yoga', 'exercise', 'health', 'medicine', 'medical']):
+        return 'Health & Fitness'
+    
+    # Clothing keywords
+    elif any(keyword in item_lower for keyword in ['shirt', 'pants', 'dress', 'shoe', 'jacket', 'hat', 'clothing', 'apparel', 'fashion', 'wear']):
+        return 'Clothing'
+    
+    # Home & Kitchen keywords
+    elif any(keyword in item_lower for keyword in ['kitchen', 'home', 'furniture', 'decor', 'appliance', 'cookware', 'utensil', 'plate', 'cup', 'bowl']):
+        return 'Home & Kitchen'
+    
+    else:
+        return 'General'
 
 @app.route('/')
 def home():
@@ -138,10 +161,6 @@ def login():
             flash(f'Login error: {str(e)}', 'error')
             
     return render_template('login.html')
-
-def sanitize_email(email):
-    # Replace '.' with ',' or another safe character (',' is readable and allowed)
-    return email.replace('.', ',')
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -303,17 +322,48 @@ def dashboard():
         flash(f"Error loading dashboard: {e}", "error")
         return redirect(url_for('login'))
 
-
 @app.route('/purchase-history')
 def purchase_history():
     if 'user_id' not in session:
         flash('Please log in to access your account.', 'error')
         return redirect(url_for('login'))
     
+    # Get purchase history from Firebase
+    user_id = session['user_id']
+    purchases = get_user_purchase_history(user_id)
+    
+    # Auto-categorize items that don't have categories
+    for purchase in purchases:
+        if purchase.get('category') == 'General' or not purchase.get('category'):
+            purchase['category'] = categorize_item(purchase['item'])
+    
     return render_template('purchase_history.html', 
-                         purchases=MOCK_PURCHASE_HISTORY,
+                         purchases=purchases,
                          username=session.get('username', 'User'))
 
+@app.route('/api/purchase-history')
+def api_purchase_history():
+    """API endpoint to get purchase history as JSON"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    try:
+        user_id = session['user_id']
+        purchases = get_user_purchase_history(user_id)
+        
+        # Auto-categorize items
+        for purchase in purchases:
+            if purchase.get('category') == 'General' or not purchase.get('category'):
+                purchase['category'] = categorize_item(purchase['item'])
+        
+        return jsonify({
+            'purchases': purchases,
+            'total_orders': len(purchases),
+            'total_spent': sum(purchase['amount'] for purchase in purchases)
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/balance')
 def get_balance():
@@ -333,8 +383,6 @@ def get_balance():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-
 
 @app.route('/logout')
 def logout():
