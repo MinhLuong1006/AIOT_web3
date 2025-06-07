@@ -67,39 +67,6 @@ def sanitize_email(email):
     # Replace '.' with ',' or another safe character (',' is readable and allowed)
     return email.replace('.', ',')
 
-def get_user_purchase_history(user_id):
-    """Fetch purchase history from Firebase for a specific user"""
-    try:
-        # Get user's purchase history from Firebase
-        history_ref = db.reference(f'users/{user_id}/history')
-        history_data = history_ref.get()
-        
-        if not history_data:
-            return []
-        
-        # Convert Firebase data to list format
-        purchases = []
-        for purchase_id, purchase_data in history_data.items():
-            # Ensure all required fields exist
-            if all(key in purchase_data for key in ['amount', 'date', 'item', 'price']):
-                purchases.append({
-                    'id': purchase_id,
-                    'item': purchase_data['item'],
-                    'category': purchase_data.get('category', 'General'),  # Default category if not specified
-                    'date': purchase_data['date'],
-                    'amount': float(purchase_data.get('price', 0)),  # Total cost  # Quantity from amount field
-                    'price': float(purchase_data.get('price', 0)),  # Unit price if available
-                    'status': purchase_data.get('status', 'Delivered')  # Default status
-                })
-        
-        # Sort by date (newest first)
-        purchases.sort(key=lambda x: x['date'], reverse=True)
-        return purchases
-        
-    except Exception as e:
-        print(f"Error fetching purchase history: {e}")
-        return []
-
 def categorize_item(item_name):
     """Automatically categorize items based on keywords in the name"""
     item_lower = item_name.lower()
@@ -126,6 +93,37 @@ def categorize_item(item_name):
     
     else:
         return 'General'
+
+def get_user_purchase_history(user_id):
+    """Get purchase history for a specific user from Firebase"""
+    try:
+        # Get the history data from Firebase
+        history_ref = db.reference(f'users/{user_id}/history')
+        history_data = history_ref.get()
+        
+        purchases = []
+        
+        if history_data:
+            for purchase_id, purchase_info in history_data.items():
+                # Extract the required fields
+                purchase = {
+                    'id': purchase_id,
+                    'item': purchase_info.get('item', 'Unknown Item'),
+                    'amount': purchase_info.get('amount', 1),  # quantity
+                    'price': purchase_info.get('price', 0.0),  # total price (no need to multiply)
+                    'date': purchase_info.get('date', ''),
+                    'category': categorize_item(purchase_info.get('item', ''))
+                }
+                purchases.append(purchase)
+        
+        # Sort purchases by date (newest first)
+        purchases.sort(key=lambda x: x['date'], reverse=True)
+        
+        return purchases
+        
+    except Exception as e:
+        print(f"Error fetching purchase history: {e}")
+        return []
 
 @app.route('/')
 def home():
@@ -356,10 +354,13 @@ def api_purchase_history():
             if purchase.get('category') == 'General' or not purchase.get('category'):
                 purchase['category'] = categorize_item(purchase['item'])
         
+        # Calculate total spent using the 'price' field (which is already the total price)
+        total_spent = sum(purchase['price'] for purchase in purchases)
+        
         return jsonify({
             'purchases': purchases,
             'total_orders': len(purchases),
-            'total_spent': sum(purchase['amount'] for purchase in purchases)
+            'total_spent': total_spent
         })
         
     except Exception as e:

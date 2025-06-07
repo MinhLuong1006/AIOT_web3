@@ -223,7 +223,7 @@
 
         // Calculate daily total
         function calculateDayTotal(purchases) {
-            return purchases.reduce((total, purchase) => total + purchase.amount, 0);
+            return purchases.reduce((total, purchase) => total + purchase.price, 0);
         }
 
         // Auto-categorize items based on keywords
@@ -269,6 +269,7 @@
                     category: purchase.category || categorizeItem(purchase.item),
                     date: purchase.date,
                     amount: parseFloat(purchase.amount),
+                    price: parseFloat(purchase.price || 0),
                     status: 'PAID' // Force all items to show PAID status
                 }));
                 
@@ -334,69 +335,73 @@
             document.getElementById('noDataState').style.display = 'none';
             document.getElementById('errorState').style.display = 'flex';
         }
-
+        // Add a new function to calculate total quantity for a day
+        function calculateDayItemCount(purchases) {
+        return purchases.reduce((total, purchase) => total + purchase.amount, 0); // Sum up all quantities
+        }
         // Render purchase list
         function renderPurchaseList() {
-            const purchaseList = document.getElementById('purchaseList');
-            const emptyState = document.getElementById('emptyState');
-            
-            if (filteredData.length === 0) {
-                purchaseList.style.display = 'none';
-                emptyState.classList.add('show');
-                return;
-            }
-            
-            emptyState.classList.remove('show');
-            purchaseList.style.display = 'flex';
-            
-            groupedData = groupPurchasesByDate(filteredData);
-            const sortedDates = Object.keys(groupedData).sort((a, b) => new Date(b) - new Date(a));
-            
-            let html = '';
-            
-            sortedDates.forEach(date => {
-                const purchases = groupedData[date];
-                const dayTotal = calculateDayTotal(purchases);
-                
-                html += `
-                    <div class="day-group">
-                        <div class="day-header" onclick="toggleDay('${date}')">
-                            <div class="day-info">
-                                <div class="day-date">${formatDate(date)}</div>
-                                <div class="day-meta">
-                                    <span class="item-count">${purchases.length} item${purchases.length > 1 ? 's' : ''}</span>
-                                </div>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 20px;">
-                                <div class="day-total">$${dayTotal.toFixed(2)}</div>
-                                <svg class="expand-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="6,9 12,15 18,9"/>
-                                </svg>
-                            </div>
-                        </div>
-                        <div class="day-products" id="day-${date}">
-                            ${purchases.map(purchase => `
-                                <div class="product-item" onclick="showPurchaseDetails('${purchase.id}')">
-                                    <div class="product-icon ${getCategoryClass(purchase.category)}">
-                                        ${getCategoryIcon(purchase.category)}
-                                    </div>
-                                    <div class="product-details">
-                                        <div class="product-name">${purchase.item}</div>
-                                        <span class="product-category">${purchase.category}</span>
-                                    </div>
-                                    <div class="product-status">
-                                        <span class="status-badge status-paid">PAID</span>
-                                    </div>
-                                    <div class="product-amount">$${purchase.amount.toFixed(2)}</div>
-                                </div>
-                            `).join('')}
+    const purchaseList = document.getElementById('purchaseList');
+    const emptyState = document.getElementById('emptyState');
+    
+    if (filteredData.length === 0) {
+        purchaseList.style.display = 'none';
+        emptyState.classList.add('show');
+        return;
+    }
+    
+    emptyState.classList.remove('show');
+    purchaseList.style.display = 'flex';
+    
+    groupedData = groupPurchasesByDate(filteredData);
+    const sortedDates = Object.keys(groupedData).sort((a, b) => new Date(b) - new Date(a));
+    
+    let html = '';
+    
+    sortedDates.forEach(date => {
+        const purchases = groupedData[date];
+        const dayTotal = calculateDayTotal(purchases); // Total cost
+        const dayItemCount = calculateDayItemCount(purchases); // Total quantity
+        
+        html += `
+            <div class="day-group">
+                <div class="day-header" onclick="toggleDay('${date}')">
+                    <div class="day-info">
+                        <div class="day-date">${formatDate(date)}</div>
+                        <div class="day-meta">
+                            <span class="item-count">${dayItemCount} item${dayItemCount > 1 ? 's' : ''}</span>
                         </div>
                     </div>
-                `;
-            });
-            
-            purchaseList.innerHTML = html;
-        }
+                    <div style="display: flex; align-items: center; gap: 20px;">
+                        <div class="day-total">$${dayTotal.toFixed(2)}</div>
+                        <svg class="expand-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6,9 12,15 18,9"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="day-products" id="day-${date}">
+                    ${purchases.map(purchase => `
+                        <div class="product-item" onclick="showPurchaseDetails('${purchase.id}')">
+                            <div class="product-icon ${getCategoryClass(purchase.category)}">
+                                ${getCategoryIcon(purchase.category)}
+                            </div>
+                            <div class="product-details">
+                                <div class="product-name">${purchase.item}</div>
+                                <span class="product-category">${purchase.category}</span>
+                            </div>
+                            <div class="product-status">
+                                <span class="status-badge status-paid">PAID</span>
+                            </div>
+                            <div class="product-amount">$${purchase.price.toFixed(2)}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    });
+    
+    purchaseList.innerHTML = html;
+}
 
         // Toggle day expansion
         function toggleDay(date) {
@@ -425,8 +430,8 @@
     // Quantity comes from the 'amount' field in Firebase
     // Total cost comes from the 'price' field in Firebase
 
-    const totalCost = purchase.amount || 0; // This should be the price from Firebase
-    
+    let price = purchase.price || 0; // This should be the price from Firebase
+    let amount = purchase.amount || 1; // Default to 1 if not specified
     modalBody.innerHTML = `
         <div class="detail-header">
             <div class="detail-icon ${getCategoryClass(purchase.category)}">
@@ -452,8 +457,12 @@
                 <span class="status-badge status-paid">PAID</span>
             </div>
             <div class="detail-row">
+                <span class="detail-label">Quantity</span>
+                <span class="detail-value">${amount}</span>
+            </div>
+            <div class="detail-row">
                 <span class="detail-label">Total Cost</span>
-                <span class="detail-value amount-highlight">$${totalCost.toFixed(2)}</span>
+                <span class="detail-value amount-highlight">$${price.toFixed(2)}</span>
             </div>
         </div>
     `;
