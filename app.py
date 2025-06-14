@@ -391,5 +391,98 @@ def logout():
     flash('You have been logged out successfully.', 'success')
     return redirect(url_for('login'))
     
+#kiosk
+# Checkout Display Routes
+@app.route('/checkout')
+def checkout_display():
+    """Main checkout display page"""
+    return render_template('checkout.html')
+
+@app.route('/checkout/fullscreen')
+def checkout_fullscreen():
+    """Fullscreen checkout display (useful for kiosk mode)"""
+    return render_template('checkout.html')
+
+# API routes for checkout system
+@app.route('/api/checkout-data')
+def get_checkout_data():
+    """API endpoint to get current checkout data"""
+    try:
+        ref = db.reference('display')
+        checkout_data = ref.get()
+        
+        over_ref = db.reference('over')
+        over_status = over_ref.get()
+        
+        response_data = {
+            'display': checkout_data,
+            'over': over_status,
+            'status': 'success'
+        }
+        
+        return jsonify(response_data)
+    
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/checkout-items')
+def get_checkout_items():
+    """API endpoint to get current scanned items"""
+    try:
+        ref = db.reference('display/items')
+        items = ref.get()
+        
+        return jsonify({
+            'items': items or {},
+            'status': 'success'
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/checkout-total')
+def get_checkout_total():
+    """API endpoint to get current total"""
+    try:
+        ref = db.reference('display/total')
+        total = ref.get()
+        
+        return jsonify({
+            'total': total or 0,
+            'status': 'success'
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/checkout-status')
+def get_checkout_status():
+    """API endpoint to get payment status"""
+    try:
+        ref = db.reference('over')
+        over_status = ref.get()
+        
+        status_message = "Scan your card here to pay" if over_status == 1 else "Scanning in progress..."
+        
+        return jsonify({
+            'over': over_status,
+            'message': status_message,
+            'status': 'success'
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
 if __name__ == '__main__':
     app.run(debug=True)
