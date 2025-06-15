@@ -31,6 +31,18 @@
         </div>
     </div>
 
+    <!-- Thank You Notification Overlay -->
+    <div id="thank-you-overlay" class="thank-you-overlay hidden">
+        <div class="thank-you-modal">
+            <div class="thank-you-content">
+                <h1>Thank you for buying!</h1>
+                <h2>See you again!</h2>
+                <p>When you have collected all your items, click here to open the gate.</p>
+                <button id="open-gate-btn" class="open-gate-button">Open Gate</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Firebase configuration - Replace with your config
         const firebaseConfig = {
@@ -46,6 +58,8 @@
         const itemsList = document.getElementById('items-list');
         const totalAmount = document.getElementById('total-amount');
         const statusMessage = document.getElementById('status-message');
+        const thankYouOverlay = document.getElementById('thank-you-overlay');
+        const openGateBtn = document.getElementById('open-gate-btn');
 
         // Listen for changes in items
         database.ref('display/items').on('value', (snapshot) => {
@@ -65,6 +79,26 @@
         database.ref('over').on('value', (snapshot) => {
             const over = snapshot.val();
             updateStatus(over);
+        });
+
+        // Listen for changes in clear status
+        database.ref('clear').on('value', (snapshot) => {
+            const clear = snapshot.val();
+            if (clear === 1) {
+                showThankYouNotification();
+            }
+        });
+
+        // Open gate button click handler
+        openGateBtn.addEventListener('click', () => {
+            // Set in_process to 0
+            database.ref('in_process').set(0).then(() => {
+                console.log('in_process set to 0');
+                // Hide the notification
+                hideThankYouNotification();
+            }).catch((error) => {
+                console.error('Error setting in_process:', error);
+            });
         });
 
         function displayItems(items) {
@@ -96,6 +130,16 @@
             }
         }
 
+        function showThankYouNotification() {
+            thankYouOverlay.classList.remove('hidden');
+            thankYouOverlay.classList.add('visible');
+        }
+
+        function hideThankYouNotification() {
+            thankYouOverlay.classList.remove('visible');
+            thankYouOverlay.classList.add('hidden');
+        }
+
         // Initial load - get current data
         database.ref('display').once('value', (snapshot) => {
             const data = snapshot.val();
@@ -108,6 +152,14 @@
         database.ref('over').once('value', (snapshot) => {
             const over = snapshot.val();
             updateStatus(over);
+        });
+
+        // Check initial clear status
+        database.ref('clear').once('value', (snapshot) => {
+            const clear = snapshot.val();
+            if (clear === 1) {
+                showThankYouNotification();
+            }
         });
     </script>
 </body>
