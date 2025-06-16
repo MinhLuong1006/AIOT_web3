@@ -17,7 +17,7 @@ import threading
 import re
 import uuid
 from werkzeug.security import generate_password_hash, check_password_hash
-
+from collections import defaultdict
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = 'iotproject'
@@ -296,6 +296,10 @@ def reset_with_token(token):
 
     return render_template("reset_with_token.html", token=token)
 
+def is_admin(email):
+    """Check if the user is an admin"""
+    return email.lower() == 'admin@gmail.com'
+
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session:
@@ -311,15 +315,127 @@ def dashboard():
             flash("User data not found.", "error")
             return redirect(url_for('login'))
 
-        balance = user_data.get('balance', 0)
-        username = user_data.get('username', 'User')
-
-        return render_template('dashboard.html', balance=balance, username=username)
+        # Check if user is admin
+        user_email = user_data.get('email', '')
+        if is_admin(user_email):
+            # Admin dashboard - show storage item counts
+            item_counts = get_storage_items()
+            return render_template('admin_dashboard.html', 
+                                 item_counts=item_counts, 
+                                 username=user_data.get('username', 'Admin'))
+        else:
+            # Regular user dashboard
+            balance = user_data.get('balance', 0)
+            username = user_data.get('username', 'User')
+            return render_template('dashboard.html', balance=balance, username=username)
 
     except Exception as e:
         flash(f"Error loading dashboard: {e}", "error")
         return redirect(url_for('login'))
-
+        
+@app.route('/api/admin/items')
+def api_admin_items():
+    """API endpoint for admin to get storage item counts"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    try:
+        user_id = session['user_id']
+        user_ref = db.reference(f'users/{user_id}')
+        user_data = user_ref.get()
+        
+        if not user_data or not is_admin(user_data.get('email', '')):
+            return jsonify({'error': 'Access denied'}), 403
+        
+        item_counts = get_storage_items()
+        total_items = sum(item_counts.values()) if item_counts else 0
+        
+        return jsonify({
+            'items': item_counts,
+            'total_items': total_items,
+            'unique_items': len(item_counts)
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+@app.route('/api/admin/update-item', methods=['POST'])
+def update_item_count():
+    """API endpoint for admin to update item counts in storage"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Not authenticated'}), 401
+    
+    try:
+        user_id = session['user_id']
+        user_ref = db.reference(f'users/{user_id}')
+        user_data = user_ref.get()
+        
+        if not user_data or not is_admin(user_data.get('email', '')):
+            return jsonify({'success': False, 'message': 'Access denied'}), 403
+        
+        # Get the JSON data from request
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'message': 'No data provided'}), 400
+        
+        item_name = data.get('item')
+        new_count = data.get('count')
+        
+        # Validate input
+        if not item_name or new_count is None:
+            return jsonify({'success': False, 'message': 'Item name and count are required'}), 400
+        
+        if not isinstance(new_count, int) or new_count < 0:
+            return jsonify({'success': False, 'message': 'Count must be a non-negative integer'}), 400
+        
+        # Update item count in Firebase storage
+        storage_ref = db.reference('storage')
+        
+        # Check if item exists
+        current_items = storage_ref.get() or {}
+        
+        if new_count == 0:
+            # Remove item if count is 0
+            if item_name in current_items:
+                storage_ref.child(item_name).delete()
+                return jsonify({
+                    'success': True, 
+                    'message': f'{item_name} removed from storage',
+                    'action': 'deleted'
+                })
+            else:
+                return jsonify({'success': False, 'message': 'Item not found'}), 404
+        else:
+            # Update or create item with new count
+            storage_ref.child(item_name).set(new_count)
+            
+            action = 'updated' if item_name in current_items else 'created'
+            return jsonify({
+                'success': True, 
+                'message': f'{item_name} {action} successfully',
+                'action': action,
+                'new_count': new_count
+            })
+        
+    except Exception as e:
+        print(f"Error updating item count: {e}")
+        return jsonify({'success': False, 'message': f'Server error: {str(e)}'}), 500
+def get_storage_items():
+    """Get item counts from Firebase storage node"""
+    try:
+        storage_ref = db.reference('storage')
+        storage_data = storage_ref.get()
+        
+        if storage_data:
+            # Convert to regular dict and sort by count (descending)
+            sorted_items = dict(sorted(storage_data.items(), key=lambda x: x[1], reverse=True))
+            return sorted_items
+        else:
+            return {}
+        
+    except Exception as e:
+        print(f"Error fetching storage items: {e}")
+        return {}
+    
 @app.route('/purchase-history')
 def purchase_history():
     if 'user_id' not in session:
