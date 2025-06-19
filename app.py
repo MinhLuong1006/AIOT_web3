@@ -24,7 +24,7 @@ app.config['SECRET_KEY'] = 'iotproject'
 CORS(app)  # Enable CORS for all routes
 
 # Initialize Firebase Admin SDK
-cred = credentials.Certificate("auto-checkout-b3ea1-firebase-adminsdk-fbsvc-6f624a929d.json")
+cred = credentials.Certificate("auto-checkout-b3ea1-firebase-adminsdk-fbsvc-59797e865d.json")
 firebase_admin.initialize_app(cred, {
     "databaseURL": "https://auto-checkout-b3ea1-default-rtdb.asia-southeast1.firebasedatabase.app/"
 })
