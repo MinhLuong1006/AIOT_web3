@@ -91,13 +91,18 @@
 
         // Open gate button click handler
         openGateBtn.addEventListener('click', () => {
-            // Set in_process to 0
-            database.ref('in_process').set(0).then(() => {
-                console.log('in_process set to 0');
+            // Set both in_process and clear to 0
+            const updates = {
+                'in_process': 0,
+                'clear': 0
+            };
+            
+            database.ref().update(updates).then(() => {
+                console.log('in_process and clear set to 0');
                 // Hide the notification
                 hideThankYouNotification();
             }).catch((error) => {
-                console.error('Error setting in_process:', error);
+                console.error('Error updating values:', error);
             });
         });
 
